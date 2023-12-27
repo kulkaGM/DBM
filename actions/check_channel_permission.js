@@ -73,7 +73,7 @@ module.exports = {
   <br><br><br>
   <br><br><br>
 
-  <voice-channel-input dropdownLabel="Source Channel" selectId="channel" variableContainerId="varNameContainer2" variableInputId="varName2"></voice-channel-input>
+  <any-channel-input dropdownLabel="Source Channel" selectId="channel" variableContainerId="varNameContainer2" variableInputId="varName2"></any-channel-input>
     
   <br><br><br>
   
