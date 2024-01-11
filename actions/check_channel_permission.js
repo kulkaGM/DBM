@@ -1,3 +1,8 @@
+const { resolve } = require('path');
+const libPath = resolve(__dirname, './libs/permissions.json');
+const { meta, flags } = require('./libs/permissions.json');
+
+let run = false;
 module.exports = {
   //---------------------------------------------------------------------
   // Action Name
@@ -22,7 +27,24 @@ module.exports = {
   //---------------------------------------------------------------------
 
   subtitle(data, presets) {
-    return `${presets.getConditionsText(data)}`;
+    let text;
+    if (data.comment) {
+      text = data.comment;
+
+      if (text.includes('{input}')) {
+        const input = flags[Object.keys(flags).find(k => { return flags[k].hexadecimal == data.value })]?.name || data.value;
+        text = text.replace('{input}', input);
+      }
+
+      if (text.includes('{conditionsText}')) {
+        text = text.replace('{conditionsText}', `${presets.getConditionsText(data)}`);
+      }
+
+    } else {
+      text = `${presets.getConditionsText(data)}`;
+    }
+
+    return data.color === "#ffffff" ? text : `<font color="${data.color}">${text}</font>`;
   },
 
   //---------------------------------------------------------------------
@@ -45,7 +67,7 @@ module.exports = {
   // are also the names of the fields stored in the action's JSON data.
   //---------------------------------------------------------------------
 
-  fields: ["sourceTarget", "channel", "varName2", "storage", "varName3", "flagName", "branch"],
+  fields: ["comment", "color", "sourceTarget", "channel", "varName", "select", "value", "branch"],
 
   //---------------------------------------------------------------------
   // Command HTML
@@ -60,87 +82,50 @@ module.exports = {
 
   html(isEvent, data) {
     return `
-<div style="height: 350px; overflow-y: scroll;">
-  <tab-system exclusiveTabData retainElementIds spreadOut id="sourceTarget">
-    <tab label="Member" icon="user circle" fields='["member", "memberVarName"]'>
-        <member-input dropdownLabel="Source Member" selectId="member" variableContainerId="varNameContainerMember" variableInputId="memberVarName"></member-input>
-    </tab>
-    <tab label="Role" fields='["role", "roleVarName"]'>
-        <role-input dropdownLabel="Source Role" selectId="role" variableContainerId="varNameContainerRole" variableInputId="roleVarName"></role-input>
-    </tab>
-  </tab-system>
-
-  <br><br><br>
-  <br><br><br>
-
-  <any-channel-input dropdownLabel="Source Channel" selectId="channel" variableContainerId="varNameContainer2" variableInputId="varName2"></any-channel-input>
+  <div style="padding-top: 10px; padding-left: 10px; padding-right: 10px; max-height: calc(80vh - 60px); overflow-y: auto;" >
+    <tab-system id="sourceTarget" spreadOut exclusiveTabData retainElementIds>
+      <tab label="Member" icon="user circle" fields='["member", "memberVarName"]'>
+          <member-input dropdownLabel="Source Member" selectId="member" variableContainerId="varNameContainerMember" variableInputId="memberVarName"></member-input>
+      </tab>
+      <tab label="Role" fields='["role", "roleVarName"]'>
+          <role-input dropdownLabel="Source Role" selectId="role" variableContainerId="varNameContainerRole" variableInputId="roleVarName"></role-input>
+      </tab>
+    </tab-system>
     
-  <br><br><br>
-  
-  <hr class="subtlebar">
-
-  <div style="width: calc(60% - 12px);">
-    <span class="dbminputlabel">Permission Select</span><br>
-    <select id="flagName" class="round" onchange="glob.onComparisonChanged(this)">
-      <option value="CREATE_INSTANT_INVITE" title="CREATE_INSTANT_INVITE">Create invite</option>
-      <option value=KICK_MEMBERS title="KICK_MEMBERS">Kick members</option>
-      <option value=BAN_MEMBERS title="BAN_MEMBERS">Ban members</option>
-      <option value=ADMINISTRATOR title="ADMINISTRATOR">Administrator</option>
-      <option value=MANAGE_CHANNELS title="MANAGE_CHANNELS">Manage channels</option>
-      <option value=MANAGE_GUILD title="MANAGE_GUILD">Manage server</option>
-      <option value=ADD_REACTIONS title="ADD_REACTIONS">Add reactions</option>
-      <option value=VIEW_AUDIT_LOG title="VIEW_AUDIT_LOG">View audit log</option>
-      <option value=PRIORITY_SPEAKER title="PRIORITY_SPEAKER">Priority Speaker</option>
-      <option value=STREAM title="STREAM">Video</option>
-      <option value=VIEW_CHANNEL titleue="VIEW_CHANNEL" selected>View channels</option>
-      <option value=SEND_MESSAGES title="SEND_MESSAGES">Send messages</option>
-      <option value=SEND_TTS_MESSAGES title="SEND_TTS_MESSAGES">Send text-to-speech messages</option>
-      <option value=MANAGE_MESSAGES title="MANAGE_MESSAGES">Manage messages</option>
-      <option value=EMBED_LINKS title="EMBED_LINKS">Embed links</option>
-      <option value=ATTACH_FILES title="ATTACH_FILES">Attach files</option>
-      <option value=READ_MESSAGE_HISTORY title="READ_MESSAGE_HISTORY">Read message history</option>
-      <option value=MENTION_EVERYONE title="MENTION_EVERYONE">Mention @everyone, @here and all roles</option>
-      <option value=USE_EXTERNAL_EMOJIS title="USE_EXTERNAL_EMOJIS">Use external emojis</option>
-      <option value=VIEW_GUILD_INSIGHTS title="VIEW_GUILD_INSIGHTS">View Server Insights</option>
-      <option value=CONNECT title="CONNECT">Connect</option>
-      <option value=SPEAK title="SPEAK">Speak</option>
-      <option value=MUTE_MEMBERS title="MUTE_MEMBERS">Mute members</option>
-      <option value=DEAFEN_MEMBERS title="DEAFEN_MEMBERS">Defean members</option>
-      <option value=MOVE_MEMBERS title="MOVE_MEMBERS">Move members</option>
-      <option value=USE_VAD title="USE_VAD">Use Voice Activity Detection</option>
-      <option value=CHANGE_NICKNAME title="CHANGE_NICKNAME">Change nickname</option>
-      <option value=MANAGE_NICKNAMES title="MANAGE_NICKNAMES">Manage nicknames</option>
-      <option value=MANAGE_ROLES title="MANAGE_ROLES">Manage roles</option>
-      <option value=MANAGE_WEBHOOKS title="MANAGE_WEBHOOKS">Manage webhooks</option>
-      <option value=MANAGE_EMOJIS_AND_STICKERS title="MANAGE_EMOJIS_AND_STICKERS">Manage emojis and stickers</option>
-      <option value=USE_APPLICATION_COMMANDS title="USE_APPLICATION_COMMANDS">Use Application Commands</option>
-      <option value=REQUEST_TO_SPEAK title="REQUEST_TO_SPEAK">Request to speak</option>
-      <option value=MANAGE_EVENTS title="MANAGE_EVENTS">Manage Events</option>
-      <option value=MANAGE_THREADS title="MANAGE_THREADS">Manage threads</option>
-      <option value=USE_PUBLIC_THREADS title="USE_PUBLIC_THREADS">Create public threads</option>
-      <option value=CREATE_PUBLIC_THREADS title="CREATE_PUBLIC_THREADS">Create Public Threads</option>
-      <option value=USE_PRIVATE_THREADS title="USE_PRIVATE_THREADS">Use Private threads</option>
-      <option value=CREATE_PRIVATE_THREADS title="CREATE_PRIVATE_THREADS">Create Private Threads</option>
-      <option value=USE_EXTERNAL_STICKERS title="USE_EXTERNAL_STICKERS">Use External Stickers</option>
-      <option value=SEND_MESSAGES_IN_THREADS title="SEND_MESSAGES_IN_THREADS">Send messages in threads</option>
-      <option value=START_EMBEDDED_ACTIVITIES title="START_EMBEDDED_ACTIVITIES">Start Embedded Activities</option>
-      <option value=MODERATE_MEMBERS title="MODERATE_MEMBERS">Time out members</option>
-      <option value=CUSTOM title="Seems like you know what you're doing">Flag from variable</option>
-    </select>
-  </div>
-
-  <div id="get">
-    <br>
-    <retrieve-from-variable allowSlashParams dropdownLabel="Variable" selectId="storage" variableContainerId="varNameContainer3" variableInputId="varName3"></retrieve-from-variable>
+    <br><br><br><br><br>
+    
+    <any-channel-input style="padding-top: 10px;" dropdownLabel="Source Channel" selectId="channel" variableContainerId="varNameContainer" variableInputId="varName"></any-channel-input>
+    
     <br><br><br>
-  </div>
-  
-  <br>
-
-  <hr class="subtlebar">
-  <br>
-  <conditional-input id="branch"></conditional-input>
-</div>`;
+    
+    <hr class="subtlebar">
+    
+    <div style="width: calc(60% - 12px);">
+      <span class="dbminputlabel">Permission Select <a href="https://discord.com/developers/docs/topics/permissions#implicit-permissions" target="_blank">Permissions Behaviour</a></span><br>
+      <select id="select" class="round" onchange="glob.onComparisonChanged(this)"></select>
+    </div>
+    
+    <div id="inputDiv">
+      <br>
+      <span class="dbminputlabel" title="Use permission resolvable Hexadecimal value, Integer or Permission NAME">Input (Mouse hover) <a href="https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags" target="_blank">Open Permission Flags</a></span><br>
+      <input id="value" list="datalisted" class="round" type="text" title='Use permission resolvable Hexadecimal value, Integer or Permission NAME\nYou can use variable eg.. \${tempVars("myPerm")}' placeholder='You can use variable too.. eg.. \${tempVars("myPerm")}'></input>
+      <datalist id="datalisted" class="round"></datalist>
+    </div>
+    <hr class="subtlebar">
+    <conditional-input id="branch"></conditional-input>
+    
+    <br><br><br>
+    
+    <hr class="subtlebar">
+    <div style="float: left; width: 82%; display: table-cell;">
+      <span class="dbminputlabel">Subtitle</span>
+      <input id="comment" class="round" type="text" placeholder="Use for comment // Hover for more info" title="{input} - to show your Input or Selected Permission\n{conditionsText} - to show subtitle from DBM with your text" value="Check '{input}' <div style='float: right;'>{conditionsText}</div>">
+    </div>
+    <div style="float: right; width: 15%; display: table-cell;">
+      <span class="dbminputlabel">Color</span>
+      <input id="color" class="round" type="color" value="#ffffff" title="To use a DBM theme color set all to 255">
+    </div>
+  </div>`;
   },
 
   //---------------------------------------------------------------------
@@ -152,17 +137,58 @@ module.exports = {
   //---------------------------------------------------------------------
 
   init() {
-    const { glob, document } = this;
+    // init() seems to be run twice when Action is being Edited (Issue is not present when Creating New Action), this seems to be DBM app issue
+    if (!run) {
+      run = true
+      const { glob, document } = this;
 
-    glob.onComparisonChanged = function (event) {
-      if (event.value === "CUSTOM") {
-        document.getElementById("get").style.display = null;
-      } else {
-        document.getElementById("get").style.display = "none";
+      const selectElement = document.getElementById("select");
+      const dataListed = document.getElementById("datalisted");
+
+      const option = document.createElement("option");
+      option.text = "Advanced CUSTOM Input";
+      option.title = "Permission_Flag, Integer or Hexadecimal";
+      option.value = "CUSTOM";
+      selectElement.appendChild(option);
+
+      for (const key in flags) {
+        const option = document.createElement("option");
+        const optionList = document.createElement("option");
+        try {
+          const value = Number(flags[key].hexadecimal);
+          if (!value) throw Error(`Unable to parse hexadecimal value of '${key}'!`);
+          option.text = flags[key].name + `${flags[key].channels.length > 0 ? '' : ' (Server Permission)'}`;
+          option.title = `${flags[key].channels.length > 0 ? `Can be used in (${flags[key].channels.join(', ')})` : 'This is server permission and should NOT be used for channel'}\n\n${flags[key].description}\n\n${key} (${flags[key].hexadecimal} / ${value})`;
+          option.value = flags[key].hexadecimal;
+
+          optionList.text = flags[key].name + ` [${key}] ` + `${flags[key].channels.join(', ') ? '' : ' (Server Permission)'}`;
+          optionList.value = flags[key].hexadecimal;
+        } catch (e) {
+          console.error(e);
+          option.text = "Error";
+          option.title = e.message
+          option.value = "Error";
+        }
+        selectElement.appendChild(option);
+        dataListed.appendChild(optionList);
       }
-    };
 
-    glob.onComparisonChanged(document.getElementById("flagName"));
+      selectElement.value = flags["VIEW_CHANNEL"].hexadecimal;
+
+
+
+      glob.onComparisonChanged = function (event) {
+        if (event.value === "CUSTOM") {
+          document.getElementById("inputDiv").style.display = null;
+        } else {
+          document.getElementById("value").value = event.value;
+          document.getElementById("inputDiv").style.display = "none";
+        }
+      };
+
+      // await: element "select" is being undefined meaning init() is executed before the HTML is finished loading?
+      (async () => { glob.onComparisonChanged(await document.getElementById("select")) })();
+    }
   },
 
   //---------------------------------------------------------------------
@@ -175,7 +201,7 @@ module.exports = {
 
   async action(cache) {
     const data = cache.actions[cache.index];
-    const channel = await this.getVoiceChannelFromData(data.channel, data.varName2, cache);
+    const channel = await this.getChannelFromData(data.channel, data.varName, cache);
 
     let sourceObj;
     if (data.sourceTarget._index === 0) {
@@ -184,19 +210,10 @@ module.exports = {
       sourceObj = await this.getRoleFromData(data.sourceTarget.role, data.sourceTarget.roleVarName, cache);
     }
 
-    let flag;
-    if (data.flagName === "CUSTOM") {
-      const type = parseInt(data.storage, 10);
-      const varName3 = this.evalMessage(data.varName3, cache);
-      const variable = this.getVariable(type, varName3, cache);
-      flag = variable;
-    } else {
-      flag = data.flagName;
-    }
-
+    const value = this.evalMessage(data.value, cache);
     let result;
     if (channel && sourceObj) {
-      result = channel.permissionsFor(sourceObj)?.has(flag);
+      result = channel.permissionsFor(sourceObj)?.has(value);
     }
 
     this.executeResults(result, data?.branch ?? data, cache);
@@ -229,5 +246,7 @@ module.exports = {
   // functions you wish to overwrite.
   //---------------------------------------------------------------------
 
-  mod() { },
+  mod() {
+    if (!meta.version.startsWith('1.0')) console.error(`[Error] Check Channel Permission: lib version ${meta.version} is not supported!\nPlease update library located at ${libPath}\nDownload from ${meta.source}`);
+  },
 };
