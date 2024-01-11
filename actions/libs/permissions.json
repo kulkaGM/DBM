@@ -1,7 +1,7 @@
 {
 	"meta": {
 		"version": "1.0.0",
-		"source": "https://github.com/kulkaGM/DBM/blob/main/libs/permissions.json"
+		"source": "https://github.com/kulkaGM/DBM/blob/main/actions/libs/permissions.json"
 	},
 	"flags": {
 		"ADD_REACTIONS": {
