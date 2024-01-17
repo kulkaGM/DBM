@@ -1,6 +1,14 @@
 const { resolve } = require('path');
 const libPath = resolve(__dirname, './libs/permissions.json');
-const { meta, flags } = require('./libs/permissions.json');
+function getLib() {
+  let lib;
+  try {
+    lib = require(libPath);
+  } catch (e) {
+    console.error(e);
+  }
+  return lib;
+}
 
 let run = false;
 module.exports = {
@@ -32,8 +40,9 @@ module.exports = {
       text = data.comment;
 
       if (text.includes('{input}')) {
-        const input = flags[Object.keys(flags).find(k => { return flags[k].hexadecimal == data.value })]?.name || data.value;
-        text = text.replace('{input}', input);
+        const lib = getLib();
+        const input = lib ? lib.flags[Object.keys(lib.flags).find(k => { return lib.flags[k].hexadecimal == data.value })]?.name : undefined;
+        text = text.replace('{input}', input || data.value);
       }
 
       if (text.includes('{conditionsText}')) {
@@ -100,9 +109,13 @@ module.exports = {
     
     <hr class="subtlebar">
     
+    <div id="libState" style="display: none;">
+      <span style="white-space: pre-line; display: block; padding: 5px 5px 5px 5px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-radius: 4px 4px 4px 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);">Warning - Library required for Permission Select could not be loaded.<br><br>This library can be downloaded at https://github.com/kulkaGM/DBM/blob/main/actions/libs/permissions.json<br><br>Without this Library you can use only Custom Input which can be uncomfortable for new users</span><br>
+    </div>
+    
     <div style="width: calc(60% - 12px);">
       <span class="dbminputlabel">Permission Select <a href="https://discord.com/developers/docs/topics/permissions#implicit-permissions" target="_blank">Permissions Behaviour</a></span><br>
-      <select id="select" class="round" onchange="glob.onComparisonChanged(this)"></select>
+      <select id="select" class="round" onchange="glob.onChange(this)"></select>
     </div>
     
     <div id="inputDiv">
@@ -151,34 +164,38 @@ module.exports = {
       option.value = "CUSTOM";
       selectElement.appendChild(option);
 
-      for (const key in flags) {
-        const option = document.createElement("option");
-        const optionList = document.createElement("option");
-        try {
-          const value = Number(flags[key].hexadecimal);
-          if (!value) throw Error(`Unable to parse hexadecimal value of '${key}'!`);
-          option.text = flags[key].name + `${flags[key].channels.length > 0 ? '' : ' (Server Permission)'}`;
-          option.title = `${flags[key].channels.length > 0 ? `Can be used in (${flags[key].channels.join(', ')})` : 'This is server permission and should NOT be used for channel'}\n\n${flags[key].description}\n\n${key} (${flags[key].hexadecimal} / ${value})`;
-          option.value = flags[key].hexadecimal;
+      const lib = getLib();
+      if (lib) {
+        const { flags = {} } = lib;
+        for (const key in flags) {
+          const option = document.createElement("option");
+          const optionList = document.createElement("option");
+          try {
+            const value = Number(flags[key].hexadecimal);
+            if (!value) throw Error(`Unable to parse hexadecimal value of '${key}'!`);
+            option.text = flags[key].name + `${flags[key].channels.length > 0 ? '' : ' (Server Permission)'}`;
+            option.title = `${flags[key].channels.length > 0 ? `Can be used in (${flags[key].channels.join(', ')})` : 'This is server permission and should NOT be used for channel'}\n\n${flags[key].description}\n\n${key} (${flags[key].hexadecimal} / ${value})`;
+            option.value = flags[key].hexadecimal;
 
-          optionList.text = flags[key].name + ` [${key}] ` + `${flags[key].channels.join(', ') ? '' : ' (Server Permission)'}`;
-          optionList.value = flags[key].hexadecimal;
-        } catch (e) {
-          console.error(e);
-          option.text = "Error";
-          option.title = e.message
-          option.value = "Error";
+            optionList.text = flags[key].name + ` [${key}] ` + `${flags[key].channels.join(', ') ? '' : ' (Server Permission)'}`;
+            optionList.value = flags[key].hexadecimal;
+          } catch (e) {
+            console.error(e);
+            option.text = "Error";
+            option.title = e.message
+            option.value = "Error";
+          }
+          selectElement.appendChild(option);
+          dataListed.appendChild(optionList);
         }
-        selectElement.appendChild(option);
-        dataListed.appendChild(optionList);
+        selectElement.value = lib?.flags?.["VIEW_CHANNEL"]?.hexadecimal;
+      } else {
+        document.getElementById("libState").style.display = null;
+        (async () => { const select = await document.getElementById("select"); select.value = "CUSTOM"; })();
       }
 
-      selectElement.value = flags["VIEW_CHANNEL"].hexadecimal;
-
-
-
-      glob.onComparisonChanged = function (event) {
-        if (event.value === "CUSTOM") {
+      glob.onChange = function (event) {
+        if (!event.value || event.value === "CUSTOM") {
           document.getElementById("inputDiv").style.display = null;
         } else {
           document.getElementById("value").value = event.value;
@@ -187,7 +204,7 @@ module.exports = {
       };
 
       // await: element "select" is being undefined meaning init() is executed before the HTML is finished loading?
-      (async () => { glob.onComparisonChanged(await document.getElementById("select")) })();
+      (async () => { glob.onChange(await document.getElementById("select")) })();
     }
   },
 
@@ -246,7 +263,5 @@ module.exports = {
   // functions you wish to overwrite.
   //---------------------------------------------------------------------
 
-  mod() {
-    if (!meta.version.startsWith('1.0')) console.error(`[Error] Check Channel Permission: lib version ${meta.version} is not supported!\nPlease update library located at ${libPath}\nDownload from ${meta.source}`);
-  },
+  mod() { },
 };
