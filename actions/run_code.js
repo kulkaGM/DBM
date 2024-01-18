@@ -67,33 +67,35 @@ module.exports = {
 
   subtitle(data, presets) {
     const code = data.code;
+    const codeLines = code.split('\n');
     let returns;
     if (code.includes('return')) {
-      returns = code.split('\n').filter(v => { return v.trim().startsWith('return') }).length;
+      returns = codeLines.filter(v => { v = v.trim(); return v.startsWith('return ') }).length;
     } else {
       returns = false;
     };
 
     const isCodeInit = data.codeInit ? " - (CustomInit)" : "";
-    const lines = code.split('\n').length;
+    const lines = codeLines.length;
+    const linesOfCode = codeLines.filter(e => { return e.trim().length > 0 }).length;
     let text;
     let color = data.color;
     if (returns) {
       if (data.storage > 0 && data.varName) {
-        text = data.comment ? data.comment : `{chars} characters | {lines} lines | {returns} ${returns === 1 ? "return" : "returns"} | Stored in {storedin}${isCodeInit}`;
+        text = data.comment ? data.comment : `{chars} characters | {linesOfCode}/{lines} lines | {returns} ${returns === 1 ? "return" : "returns"} | Stored in {storedin}${isCodeInit}`;
       } else {
         text = 'Warning: You are returning a value but not storing it!';
         color = "#ff0000";
       }
     } else {
       if (data.storage === "0") {
-        text = data.comment ? data.comment : "{chars} characters | {lines} lines | no returns " + isCodeInit;
+        text = data.comment ? data.comment : "{chars} characters | {linesOfCode}/{lines} lines | no returns " + isCodeInit;
       } else {
         text = 'Warning: You are storing a value without return statement!';
         color = "#ff0000";
       }
     }
-    if (text.includes('{') && text.includes('}')) text = text.replace(/{chars}/g, code.length).replace(/{lines}/g, lines).replace(/{returns}/g, returns).replace(/{varName}/g, data.varName).replace(/{storedin}/g, presets.getVariableText(data.storage, data.varName));
+    if (text.includes('{') && text.includes('}')) text = text.replace(/{chars}/g, code.length).replace(/{lines}/g, lines).replace(/{returns}/g, returns).replace(/{varName}/g, data.varName).replace(/{storedin}/g, presets.getVariableText(data.storage, data.varName)).replace(/{linesOfCode}/g, linesOfCode);
     return text.startsWith('Warning') ? `<font color="${color}">${text}</font>` : data.color == "#ffffff" ? text : `<font color="${color}">${text}</font>`;
   },
 
@@ -164,7 +166,7 @@ module.exports = {
             <div style="padding: 10px 10px 20px 10px; width: %; overflow-x: auto;">
               <div>
                 <span class="dbminputlabel">JavaScript Code</span><br>
-                <textarea id="code" rows="18" name="is-eval" style="max-width: 100%; white-space: nowrap;" onmouseup="glob.mouseUp(event, 'code', 'codeStatus')" onmousedown="glob.mouseDown(event, 'code', 'codeStatus')" onmousemove="glob.mouseMove(event, 'code', 'codeStatus')" onkeydown="glob.textUpdated(event, 'code', 'codeStatus')" onmouseout="glob.updateCodeStatusToDefault(event, 'code', 'codeStatus')">const example = "Ohh you a JavaScripter? GOOD, code here like if you were in a function code block";\n\nif (example.length < 50) {\n  return "string is NOT longer than 50 characters";\n} else {\n  return \`string is longer than 50 characters, actually its exactly \${example.length} characters long, what a great number!\`;\n}</textarea>
+                <textarea id="code" rows="18" name="is-eval" style="resize: vertical; max-width: 100%; white-space: nowrap;" onmouseup="glob.mouseUp(event, 'code', 'codeStatus')" onmousedown="glob.mouseDown(event, 'code', 'codeStatus')" onmousemove="glob.mouseMove(event, 'code', 'codeStatus')" onkeydown="glob.textUpdated(event, 'code', 'codeStatus')" onmouseout="glob.updateCodeStatusToDefault(event, 'code', 'codeStatus')">const example = "Ohh you a JavaScripter? GOOD, code here like if you were in a function code block";\n\nif (example.length < 50) {\n  return "string is NOT longer than 50 characters";\n} else {\n  return \`string is longer than 50 characters, actually its exactly \${example.length} characters long, what a great number!\`;\n}</textarea>
                 <span id="codeStatus" style="float: right; margin-left: 6px; margin-top: 0; padding: 2px 4px 1px 4px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);"></span>
               </div>
               <div style="padding-top: 25px;">
@@ -174,7 +176,7 @@ module.exports = {
               <hr class="subtlebar">
               <div style="float: left; width: 82%; display: table-cell;">
                 <span class="dbminputlabel">Subtitle</span>
-                <input id="comment" class="round" type="text" placeholder="Leave blank to disable.. // Hover for more info" title="{chars} - Characters count\n{lines} - Lines count\n{returns} - Return statements count\n{varName} - Variable Name only\n{storedin} - DBM VariableText">
+                <input id="comment" class="round" type="text" placeholder="Leave blank to disable.. // Hover for more info" title="{chars} - Characters count\n{lines} - Lines count\n{linesOfCode} - Lines count (ignoring empty)\n{returns} - Return statements count\n{varName} - Variable Name only\n{storedin} - DBM VariableText">
               </div>
               <div style="float: right; width: 15%; display: table-cell;">
                 <span class="dbminputlabel">Color</span>
@@ -187,7 +189,7 @@ module.exports = {
               <span style="display: block; padding: 5px 5px 5px 5px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-radius: 4px 4px 4px 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);">${explainCodeInit.replace(/\n/g, '<br>')}</span><br>
               <div>
                 <span class="dbminputlabel" placeholder="This Code is run before your code for declaration of DBM variables">Variables Init</span><br>
-                <textarea id="codeInit" rows="8" name="is-eval" style="max-width: 100%; white-space: nowrap;" onmouseup="glob.mouseUp(event, 'codeInit', 'codeInitStatus')" onmousedown="glob.mouseDown(event, 'codeInit', 'codeInitStatus')" onmousemove="glob.mouseMove(event, 'codeInit', 'codeInitStatus')" onkeydown="glob.textUpdated(event, 'codeInit', 'codeInitStatus')" onmouseout="glob.updateCodeStatusToDefault(event, 'codeInit', 'codeInitStatus')"></textarea>
+                <textarea id="codeInit" rows="8" name="is-eval" style="resize: vertical; max-width: 100%; white-space: nowrap;" onmouseup="glob.mouseUp(event, 'codeInit', 'codeInitStatus')" onmousedown="glob.mouseDown(event, 'codeInit', 'codeInitStatus')" onmousemove="glob.mouseMove(event, 'codeInit', 'codeInitStatus')" onkeydown="glob.textUpdated(event, 'codeInit', 'codeInitStatus')" onmouseout="glob.updateCodeStatusToDefault(event, 'codeInit', 'codeInitStatus')"></textarea>
                 <span id="codeInitStatus" style="float: right; margin-left: 6px; margin-top: 0; padding: 2px 4px 1px 4px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);"></span>
               </div><br>
               <div style="margin-bottom: -18px;">
