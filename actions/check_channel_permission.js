@@ -66,7 +66,13 @@ module.exports = {
   // This will make it so the patch version (0.0.X) is not checked.
   //---------------------------------------------------------------------
 
-  meta: { version: "2.1.7", preciseCheck: false, author: "kulkaGM", authorUrl: "https://github.com/kulkaGM", downloadUrl: "https://github.com/kulkaGM/DBM/blob/main/actions/check_channel_permission.js" },
+  meta: {
+    version: "2.1.7",
+    preciseCheck: false,
+    author: "kulkaGM",
+    authorUrl: "https://github.com/kulkaGM",
+    downloadUrl: "https://github.com/kulkaGM/DBM/blob/main/actions/check_channel_permission.js"
+  },
 
   //---------------------------------------------------------------------
   // Action Fields
