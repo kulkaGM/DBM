@@ -71,7 +71,9 @@ module.exports = {
     preciseCheck: false,
     author: "kulkaGM",
     authorUrl: "https://github.com/kulkaGM",
-    downloadUrl: "https://github.com/kulkaGM/DBM/blob/main/actions/check_channel_permission.js"
+    downloadUrl: "https://github.com/kulkaGM/DBM/blob/main/actions/check_channel_permission.js",
+    maintainer: { name: "kulkaGM", url: "https://github.com/kulkaGM " },
+    repository: { name: "kulkaGM/DBM", url: "https://github.com/kulkaGM/DBM" }
   },
 
   //---------------------------------------------------------------------
