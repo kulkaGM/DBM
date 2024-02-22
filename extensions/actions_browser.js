@@ -49,7 +49,7 @@ module.exports = {
             </div>
           </tab>
         </tab-system>
-      </div>`
+      </div>`;
   },
   init(document, global) {
     const startLoad = performance.now();
@@ -77,29 +77,29 @@ module.exports = {
       }
     });
 
-    function getActionOverwites(actions, action) {
-      if (typeof action == "string") action = actions.find(a => a.module.name == action)
+    function getActionOverwrites(actions, action) {
+      if (typeof action == "string") action = actions.find(a => a.module.name == action);
       const overwrites = [];
       actions.forEach(a => {
         if (action.filename != a.filename && action.module.name == a.module.name) overwrites.push(a);
-      })
+      });
       return overwrites;
     }
 
-    function getActionsOverwites(actions) {
+    function getActionsOverwrites(actions) {
       const checked = [];
       const overwrites = {};
 
       actions.forEach(a => {
         if (!checked.includes(a.filename)) {
           checked.push(a.filename);
-          const actionOverwites = getActionOverwites(actions, a);
+          const actionOverwites = getActionOverwrites(actions, a);
           if (actionOverwites.length > 0) {
             checked.push(...actionOverwites.map(b => b.filename));
             overwrites[a.filename] = actionOverwites;
           }
         }
-      })
+      });
       return overwrites;
     }
 
@@ -111,7 +111,7 @@ module.exports = {
       let str = '';
       str += whiteBlock(`You have ${actions.length} Actions in your project`);
       if (areOb.length > 0) str += '\n' + whiteBlock(`${areOb.length} Actions are considered as outdated because some <span style="color: yellow;" title="One of the properties was not found:\nname\nsection\nmeta\nmeta.version">properties (?)</span> are missing\n${areOb.map(a => `${displayFile(a.filename, a.module.name, `Display ${a.filename}`)} ${a.filename}`).join('\n')}`);
-      const actionsOverwites = getActionsOverwites(actions);
+      const actionsOverwites = getActionsOverwrites(actions);
       if (Object.keys(actionsOverwites).length > 0) str += '\n' + whiteBlock(`${Object.keys(actionsOverwites).length} Actions are overwritten by other actions..\n${Object.entries(actionsOverwites).map(a => `${displayFile(a[0], `${a[0]} ${font("white", "(" + a[1][0].module.name + ")")}`, `Display ${a[0]}`)}\n\t${a[1].map(a => displayFile(a.filename, undefined, `Display ${a.filename}`, 'cyan')).join('\n\t')}`).join(" (used)\n\n")}  (used)`);
       document.getElementById("info").innerHTML = str;
     }
@@ -128,35 +128,39 @@ module.exports = {
     }
     const dbmVersion = resolveDBMVersion();
 
-    
+
     // I considered showing the DBM Author for Actions that do not have meta.author set, however that could result in misunderstanding.
     // I will not show possible false information when the Action Mod does not have the meta properties set correctly. Which should be already done earlier for built-in Actions
     // Some creators are including 'MOD' in the action filename for identification, this Extension does not count with that.
     // const dbmAuthor = require(resolve(__dirname, '../package.json')).author;
 
-
-    const devInfo = `This Extension uses same Action properties as DBM ${font("orange", "[ 'name', 'displayName'?, 'section', 'meta'  ]")}
-Additionally uses meta properties ${font("orange", "[ 'maintainer', 'repository', 'contributors' ]")} which are intended for this Extension
-
-${font("yellow", "Note:")} the | character means OR, meaning to identify (separate) options that can be used
-
-${font("orange", "maintainer")}  - String | Object with name and url property
-${textBlock('maintainer: { name: "kulkaGM", url: "https://github.com/kulkaGM"}')}
-${font("orange", "repository")}  - String | Object with name and url property
-${textBlock('repository: { name: "kulkaGM/DBM", url: "https://github.com/kulkaGM/DBM"}')}
-${font("orange", "contributors")} - Array of strings | Array of Objects | Array of Strings & Objects
-${textBlock('contributors: [ { name: "kulkaGM", url: "https://github.com/kulkaGM" }, "Other Contributor" ]')}
-Example meta property
-${whiteBlock(`meta: {
-  version: "${dbmVersion || "1.0.0"}",${dbmVersion ? "" : font("green", "  // Unable to resolve DBM version displaying 1.0.0, Version can be found in About")}
-  preciseCheck: false,
-  author: "kulkaGM",
-  authorUrl: "https://github.com/kulkaGM",
-  downloadUrl: "https://github.com/kulkaGM/DBM/blob/main/actions/run_code.js",
-  maintainer: { name: "kulkaGM", url: "https://github.com/kulkaGM " },
-  repository: { name: "kulkaGM/DBM", url: "https://github.com/kulkaGM/DBM" },
-  contributors: [{ name: "kulkaGM", url: "https://github.com/kulkaGM" }, "Other Contributor"]
-}`)}`;
+    const toLines = (...a) => a.join('\n');
+    const devInfo = toLines(
+      `This Extension uses same Action properties as DBM ${font("orange", "[ 'name', 'displayName'?, 'section', 'meta'  ]")}`,
+      `Additionally uses meta properties ${font("orange", "[ 'maintainer', 'repository', 'contributors' ]")} which are intended for this Extension`,
+      ``,
+      `${font("yellow", "Note:")} the | character means OR, meaning to identify (separate) options that can be used`,
+      ``,
+      `${font("orange", "maintainer")}  - String | Object with name and url property`,
+      textBlock('maintainer: { name: "kulkaGM", url: "https://github.com/kulkaGM"}'),
+      `${font("orange", "repository")}  - String | Object with name and url property`,
+      textBlock('repository: { name: "kulkaGM/DBM", url: "https://github.com/kulkaGM/DBM"}'),
+      `${font("orange", "contributors")} - Array of strings | Array of Objects | Array of Strings & Objects`,
+      textBlock('contributors: [ { name: "kulkaGM", url: "https://github.com/kulkaGM" }, "Other Contributor" ]'),
+      `Example meta property`,
+      whiteBlock(toLines(
+        `meta: {`,
+        `  version: "${dbmVersion || "1.0.0"}",${dbmVersion ? "" : font("green", "  // Unable to resolve DBM version displaying 1.0.0, Version can be found in About")}`,
+        `  preciseCheck: false,`,
+        `  author: "kulkaGM",`,
+        `  authorUrl: "https://github.com/kulkaGM",`,
+        `  downloadUrl: "https://github.com/kulkaGM/DBM/blob/main/actions/run_code.js",`,
+        `  maintainer: { name: "kulkaGM", url: "https://github.com/kulkaGM " },`,
+        `  repository: { name: "kulkaGM/DBM", url: "https://github.com/kulkaGM/DBM" },`,
+        `  contributors: [{ name: "kulkaGM", url: "https://github.com/kulkaGM" }, "Other Contributor"]`,
+        `}`
+      ))
+    );
     document.getElementById("devInfo").innerHTML = devInfo;
 
 
@@ -173,7 +177,7 @@ ${whiteBlock(`meta: {
         console.error(filepath, e);
       }
       search.appendChild(option);
-    })
+    });
 
     const input = document.getElementById("input");
     input.oninput = (event) => {
@@ -197,7 +201,7 @@ ${whiteBlock(`meta: {
             } else {
               return c;
             }
-          }).join(', ')
+          }).join(', ');
         }
 
         const contributors = Array.isArray(meta.contributors) ? meta.contributors : [];
@@ -236,7 +240,7 @@ ${whiteBlock(`meta: {
         document.getElementById("info").innerHTML = whiteBlock(msg);
         document.getElementById("infoRaw").innerHTML = whiteBlock(msg);
       }
-    }
+    };
 
 
     document.getElementById("code").dataset.actions = JSON.stringify(actions);

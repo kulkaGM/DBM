@@ -41,7 +41,7 @@ module.exports = {
 
       if (text.includes('{input}')) {
         const lib = getLib();
-        const input = lib ? lib.flags[Object.keys(lib.flags).find(k => { return lib.flags[k].hexadecimal == data.value })]?.name : undefined;
+        const input = lib ? lib.flags[Object.keys(lib.flags).find(k => { return lib.flags[k].hexadecimal == data.value; })]?.name : undefined;
         text = text.replace('{input}', input || data.value);
       }
 
@@ -160,7 +160,7 @@ module.exports = {
   init() {
     // init() seems to be run twice when Action is being Edited (Issue is not present when Creating New Action), this seems to be DBM app issue
     if (!run) {
-      run = true
+      run = true;
       const { glob, document } = this;
 
       const selectElement = document.getElementById("select");
@@ -190,7 +190,7 @@ module.exports = {
           } catch (e) {
             console.error(e);
             option.text = "Error";
-            option.title = e.message
+            option.title = e.message;
             option.value = "Error";
           }
           selectElement.appendChild(option);
@@ -212,7 +212,7 @@ module.exports = {
       };
 
       // await: element "select" is being undefined meaning init() is executed before the HTML is finished loading?
-      (async () => { glob.onChange(await document.getElementById("select")) })();
+      (async () => { glob.onChange(await document.getElementById("select")); })();
     }
   },
 

@@ -70,14 +70,14 @@ module.exports = {
     const codeLines = code.split('\n');
     let returns;
     if (code.includes('return')) {
-      returns = codeLines.filter(v => { v = v.trim(); return v.startsWith('return ') }).length;
+      returns = codeLines.filter(v => { v = v.trim(); return v.startsWith('return '); }).length;
     } else {
       returns = false;
     };
 
     const isCodeInit = data.codeInit ? " - (CustomInit)" : "";
     const lines = codeLines.length;
-    const linesOfCode = codeLines.filter(e => { return e.trim().length > 0 }).length;
+    const linesOfCode = codeLines.filter(e => { return e.trim().length > 0; }).length;
     let text;
     let color = data.color;
     if (returns) {
@@ -230,8 +230,8 @@ module.exports = {
       const content = textarea.value;
       const lines = content.split('\n');
 
-      codeStatus.innerHTML = `Characters: ${content.length || 0} | Lines: ${lines.length || 0}`
-    }
+      codeStatus.innerHTML = `Characters: ${content.length || 0} | Lines: ${lines.length || 0}`;
+    };
     glob.updateCodeStatusToDefault(undefined, "code", "codeStatus");
     glob.updateCodeStatusToDefault(undefined, "codeInit", "codeInitStatus");
 
@@ -266,26 +266,26 @@ module.exports = {
       //     break;
       // }
       glob.updateCodeStatus(event, textareaId, statusId);
-    }
+    };
 
     let isMouseDown;
     glob.mouseUp = (event, textareaId, statusId) => {
       isMouseDown = false;
       if (event.button === 0) glob.updateCodeStatus(event, textareaId, statusId);
-    }
+    };
 
     glob.mouseDown = (event, textareaId, statusId) => {
       if (event.button !== 0) return;
       isMouseDown = true;
-    }
+    };
 
     let canRun = true;
     glob.mouseMove = (event, textareaId, statusId) => {
       if (!canRun) return;
       canRun = false;
       if (isMouseDown) glob.updateCodeStatus(event, textareaId, statusId);
-      setTimeout(() => { canRun = true }, 50);
-    }
+      setTimeout(() => { canRun = true; }, 50);
+    };
 
     glob.updateCodeStatus = (event, textareaId, statusId) => {
       setTimeout(() => {
@@ -301,14 +301,14 @@ module.exports = {
         const lineStartsAt = textarea.value.lastIndexOf('\n', start - 1) + 1;
         const col = start - lineStartsAt;
 
-        codeStatus.innerHTML = selection.length > 0 ? `Selected: ${selection.length} | ${selection.length > 0 ? selection.split(' ').filter(e => { return e.length > 0 && e != '"' && e != "'" && e != '`' }).length : 0} Words | Line: ${lineNum}` : `Col: ${col == -1 ? 0 : col} | Char: ${start} | Line: ${lineNum}`;
+        codeStatus.innerHTML = selection.length > 0 ? `Selected: ${selection.length} | ${selection.length > 0 ? selection.split(' ').filter(e => { return e.length > 0 && e != '"' && e != "'" && e != '`'; }).length : 0} Words | Line: ${lineNum}` : `Col: ${col == -1 ? 0 : col} | Char: ${start} | Line: ${lineNum}`;
       }, 50);
-    }
+    };
 
     glob.codeInitDefault = () => {
       document.getElementById('codeInit').value = codeInitDefault;
       glob.updateCodeStatusToDefault(undefined, "codeInit", "codeInitStatus");
-    }
+    };
   },
 
   //---------------------------------------------------------------------
@@ -349,7 +349,7 @@ module.exports = {
       let res;
       eval(`res = () => {${codeInit + '\n' + code}}`);
       return res();
-    })()
+    })();
 
     const varName = this.evalMessage(data.varName, cache);
     const storage = parseInt(data.storage, 10);
