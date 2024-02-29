@@ -227,7 +227,7 @@ module.exports = {
         <div style="padding: 5px 10px 0px 10px; float: right;">
           <span style="padding: 5px 5px 5px 5px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-radius: 4px 4px 4px 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);" title="Run your Code as Asynchronous function? (Does not apply to functions inside your Code)\n\nThis Action is run as Asynchronous\nNext Action is called automatically when your code returns">Asynchronous?</span>
             <label class="switch">
-              <input id="isAsync" type="checkbox" onclick="value  = checked;">
+              <input id="isAsync" type="checkbox" value="false" onclick="value = checked;">
               <span class="slider"></span>
             </label>
         </div>
