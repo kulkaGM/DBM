@@ -82,20 +82,20 @@ module.exports = {
     let color = data.color;
     if (returns) {
       if (data.storage > 0 && data.varName) {
-        text = data.comment ? data.comment : `{chars} characters | {linesOfCode}/{lines} lines | {returns} ${returns === 1 ? "return" : "returns"} | Stored in {storedin}${isCodeInit}`;
+        text = data.comment ? data.comment : `{chars} characters | {linesOfCode}/{lines} lines | {returns} ${returns === 1 ? "return" : "returns"} | Stored in {storedin}${isCodeInit}` + "<div style='float: right;'>{type}</div>";
       } else {
         text = 'Warning: You are returning a value but not storing it!';
         color = "#ff0000";
       }
     } else {
       if (data.storage === "0") {
-        text = data.comment ? data.comment : "{chars} characters | {linesOfCode}/{lines} lines | no returns " + isCodeInit;
+        text = data.comment ? data.comment : "{chars} characters | {linesOfCode}/{lines} lines | no returns " + isCodeInit + "<div style='float: right;'>{type}</div>";
       } else {
         text = 'Warning: You are storing a value without return statement!';
         color = "#ff0000";
       }
     }
-    if (text.includes('{') && text.includes('}')) text = text.replace(/{chars}/g, code.length).replace(/{lines}/g, lines).replace(/{returns}/g, returns).replace(/{varName}/g, data.varName).replace(/{storedin}/g, presets.getVariableText(data.storage, data.varName)).replace(/{linesOfCode}/g, linesOfCode);
+    if (text.includes('{') && text.includes('}')) text = text.replace(/{chars}/g, code.length).replace(/{lines}/g, lines).replace(/{returns}/g, returns).replace(/{varName}/g, data.varName).replace(/{storedin}/g, presets.getVariableText(data.storage, data.varName)).replace(/{linesOfCode}/g, linesOfCode).replace(/{type}/g, data.isAsync == "true" ? "async" : "sync");
     return text.startsWith('Warning') ? `<font color="${color}">${text}</font>` : data.color == "#ffffff" ? text : `<font color="${color}">${text}</font>`;
   },
 
@@ -139,7 +139,7 @@ module.exports = {
   // are also the names of the fields stored in the action's JSON data.
   //---------------------------------------------------------------------
 
-  fields: ["code", "storage", "varName", "comment", "color", "codeInit"],
+  fields: ["isAsync", "code", "storage", "varName", "comment", "color", "codeInit"],
 
   //---------------------------------------------------------------------
   // Dialog Size
@@ -168,7 +168,69 @@ module.exports = {
 
   html(isEvent, data) {
     return `
+      <style>
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 40px;
+          height: 24px;
+        }
+      
+        .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+      
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          -webkit-transition: .4s;
+          transition: .4s;
+          border-radius: 24px;
+        }
+      
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          -webkit-transition: .4s;
+          transition: .4s;
+          border-radius: 50%;
+        }
+      
+        input:checked + .slider {
+          background-color: #2196F3;
+        }
+      
+        input:focus + .slider {
+          box-shadow: 0 0 1px #2196F3;
+        }
+      
+        input:checked + .slider:before {
+          -webkit-transform: translateX(16px);
+          -ms-transform: translateX(16px);
+          transform: translateX(16px);
+        }
+      </style>
+
       <div style="padding-right: 10px; height: calc(80vh - 60px); overflow-y: auto;">
+        <div style="padding: 5px 10px 0px 10px; float: right;">
+          <span style="padding: 5px 5px 5px 5px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-radius: 4px 4px 4px 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);" title="Run your Code as Asynchronous function? (Does not apply to functions inside your Code)\n\nThis Action is run as Asynchronous\nNext Action is called automatically when your code returns">Asynchronous?</span>
+            <label class="switch">
+              <input id="isAsync" type="checkbox" onclick="value  = checked;">
+              <span class="slider"></span>
+            </label>
+        </div>
         <tab-system>
           <tab label="Run Code" icon="align left">
             <div style="padding: 10px 10px 20px 10px; width: %; overflow-x: auto;">
@@ -184,7 +246,7 @@ module.exports = {
               <hr class="subtlebar">
               <div style="float: left; width: 82%; display: table-cell;">
                 <span class="dbminputlabel">Subtitle</span>
-                <input id="comment" class="round" type="text" placeholder="Leave blank to disable.. // Hover for more info" title="{chars} - Characters count\n{lines} - Lines count\n{linesOfCode} - Lines count (ignoring empty)\n{returns} - Return statements count\n{varName} - Variable Name only\n{storedin} - DBM VariableText">
+                <input id="comment" class="round" type="text" placeholder="Leave blank to disable.. // Hover for more info" title="{type} - async or sync?\n{chars} - Characters count\n{lines} - Lines count\n{linesOfCode} - Lines count (ignoring empty)\n{returns} - Return statements count\n{varName} - Variable Name only\n{storedin} - DBM VariableText">
               </div>
               <div style="float: right; width: 15%; display: table-cell;">
                 <span class="dbminputlabel">Color</span>
@@ -222,6 +284,9 @@ module.exports = {
 
   init() {
     const { glob, document } = this;
+
+    const isAsync = document.getElementById('isAsync');
+    if (isAsync.value == "true") isAsync.checked = true;
 
     glob.updateCodeStatusToDefault = (event, textareaId, statusId) => {
       const codeStatus = document.getElementById(statusId);
@@ -337,19 +402,14 @@ module.exports = {
   // so be sure to provide checks for variable existence.
   //---------------------------------------------------------------------
 
-  action(cache) {
+  async action(cache) {
     const data = cache.actions[cache.index];
     const code = data.code;
     const codeInit = data.codeInit == "" ? codeInitDefault : data.codeInit;
+    const isAsync = data.isAsync == "true" ? true : false;
 
-    const result = (() => {
-      // Does not work with "this.", too much workaround with having codeInit separated
-      // const res = new Function();
-
-      let res;
-      eval(`res = () => {${codeInit + '\n' + code}}`);
-      return res();
-    })();
+    const run = eval(`${isAsync ? "async " : ""}() => {${codeInit + '\n' + code}}`);
+    const result = await run();
 
     const varName = this.evalMessage(data.varName, cache);
     const storage = parseInt(data.storage, 10);
