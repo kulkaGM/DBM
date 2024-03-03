@@ -16,10 +16,17 @@ module.exports = {
     // Some parts of html do not need to be dynamic, but it reduces file size and your time writing/editing html
     return `
       <div style="padding: 10px 10px 10px 10px; height: calc(95vh - 60px); overflow-y: auto;" >
-        <span class="dbminputlabel" title="">Action Search</span><br>
-        <input id="input" list="search" class="round" type="text" placeholder="Search action by Name, Author, Section or File name"></input>
-        <datalist id="search" class="round"></datalist>
-        <br>
+        <div>
+          <div style="width: 85%; float: left;">
+            <span class="dbminputlabel" title="">Action Search</span><br>
+            <input id="input" list="search" class="round" type="text" placeholder="Search action by Name, Author, Section or File name"></input>
+            <datalist id="search" class="round"></datalist>
+          </div>
+          <div style="width: 10%; float: right;"><br>
+            <button id="summaryButton" class="tiny ui icon button" onclick="document.getElementById('input').value = ''; document.getElementById('input').oninput();"><span>Summary</span></button>
+          </div>
+        </div>
+        <br><br><br>
         <tab-system spreadOut>
           <tab label="Summary" icon="">
             <div id="info" style="padding: 10px; white-space: break-spaces;">
@@ -53,10 +60,10 @@ module.exports = {
   },
   init(document, global) {
     const startLoad = performance.now();
-    const font = (color, text) => `<font color="${color}">${text}</font>`;
-    const textBlock = (text) => `<p style="white-space: pre; overflow: auto; display: block; padding: 5px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-radius: 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);">${text}</p>`;
-    const whiteBlock = (text) => `<p style="white-space: break-spaces; display: block; padding: 10px; border: 2px solid #ccc; border-radius: 5px; overflow: auto;">${text}</p>`;
-    const displayFile = (filename, text = filename, title = "", color = "#76A9FF") => `<span style="color: ${color}; cursor: pointer;" title="${title}" onclick="document.getElementById('input').value='${filename}';document.getElementById('input').oninput()">${text}</span>`;
+    const font = (color, text, font = "") => `<span style="font: ${font}; color: ${color};">${text}</span>`;
+    const textBlock = (text, white_space = "pre") => `<div style="white-space: ${white_space}; overflow: auto; display: block; padding: 5px; background-color: var(--label-background-color); border: solid 1px var(--label-border); border-radius: 4px; box-shadow: 3px 0px 2px var(--label-shadow-color);">${text}</div>`;
+    const whiteBlock = (text, white_space = "pre") => `<div style="white-space: ${white_space}; display: block; padding: 10px; border: 2px solid #ccc; border-radius: 5px; overflow: auto;">${text}</div>`;
+    const displayFile = (a, text = a.filename, title = `${a.filename}\n\nName: ${a.module.displayName ? `${a.module.name}\nDisplayed as: ${a.module.displayName}` : a.module.name}`, color = "#76A9FF") => `<span style="color: ${color}; cursor: pointer;" title="${title}" onclick="document.getElementById('input').value='${a.filename}';document.getElementById('input').oninput()">${text}</span>`;
     const toHref = (url, text) => `<a draggable="false" href="#" onclick="globalOpenLink('${url}')" title="Opens ${url}\nin your browser">${text}</a>`;
     const resolveHref = (obj) => typeof obj == "object" ? obj.url ? toHref(obj.url, obj.name) : obj.name : obj;
 
@@ -103,17 +110,86 @@ module.exports = {
       return overwrites;
     }
 
-    const areOb = actions.filter(a => !(a.module.name && a.module.section && a.module.meta && a.module.meta.version));
+    const outdatedMissingProps = {};
+    const outdated = actions.filter(a => {
+      const missing = [];
+      if (!a.module?.name) missing.push("name");
+      if (!a.module?.section) missing.push("section");
+      if (!a.module?.meta) missing.push("meta"); else if (!a.module?.meta?.version) missing.push("meta.version");
+      if (missing.length > 0) outdatedMissingProps[a.filename] = missing;
+      return missing.length > 0;
+    });
 
     function displaySummary() {
       document.querySelector('[tabindex="0"]').innerHTML = "Summary";
       if (actions.length == 0) return font("red", "You have no Actions in your project!");
       let str = '';
-      str += whiteBlock(`You have ${actions.length} Actions in your project`);
-      if (areOb.length > 0) str += '\n' + whiteBlock(`${areOb.length} Actions are considered as outdated because some <span style="color: yellow;" title="One of the properties was not found:\nname\nsection\nmeta\nmeta.version">properties (?)</span> are missing\n${areOb.map(a => `${displayFile(a.filename, a.module.name, `Display ${a.filename}`)} ${a.filename}`).join('\n')}`);
+      str += whiteBlock(`You have ${actions.length} Actions in your project<div style='display:flex; justify-content: space-between; margin: 0 auto; padding: 10px;'>
+          <button id="listByFilename" class="tiny ui icon button"><span>List by filename</span></button>
+          <button id="listByName" class="tiny ui icon button"><span>List by Name</span></button>
+          <button id="listByDisplayName" class="tiny ui icon button"><span>List with Display Name</span></button>
+          <button id="listHide" class="tiny ui icon button"><span>Hide list</span></button>
+        </div><div id='actionList'></div>`);
+
+      if (outdated.length > 0) str += '\n' + whiteBlock(`${outdated.length} Actions are considered as outdated because some <span style="color: yellow;" title="Extension checks for: [ name, section, meta, meta.version ]">properties <i class="question circle outline icon"></i></span> are missing` + "\n" + outdated.map(a => `<i class="question circle outline icon" title="${outdatedMissingProps[a.filename].join('\n')}"></i> ${displayFile(a, a.module.name)} ${a.filename}`).join('\n'));
       const actionsOverwites = getActionsOverwrites(actions);
-      if (Object.keys(actionsOverwites).length > 0) str += '\n' + whiteBlock(`${Object.keys(actionsOverwites).length} Actions are overwritten by other actions..\n${Object.entries(actionsOverwites).map(a => `${displayFile(a[0], `${a[0]} ${font("white", "(" + a[1][0].module.name + ")")}`, `Display ${a[0]}`)}\n\t${a[1].map(a => displayFile(a.filename, undefined, `Display ${a.filename}`, 'cyan')).join('\n\t')}`).join(" (used)\n\n")}  (used)`);
+      if (Object.keys(actionsOverwites).length > 0) str += '\n' + whiteBlock(`${Object.keys(actionsOverwites).length} Actions are overwritten by other actions..\n${Object.entries(actionsOverwites).map(a => `${displayFile(a[1][0], `${a[0]} ${font("white", "(" + a[1][0].module.name + ")")}`)}\n\t${a[1].map(a => displayFile(a, undefined, undefined, 'cyan')).join('\n\t')}`).join(" (used)\n\n")}  (used)`);
+
+
       document.getElementById("info").innerHTML = str;
+
+      document.getElementById("listByFilename").onclick = () => {
+        document.getElementById("actionList").innerHTML = whiteBlock(actions.map((a, i) => (`${i + 1}. ${displayFile(a)} ${a.module.displayName ? `${a.module.name} ${font("white", "(" + a.module.displayName + ")")}` : a.module.name}`)).join('\n'));
+        displayNamesAll = false;
+        document.getElementById("listByDisplayName").innerHTML = "List with Display Name";
+      };
+      document.getElementById("listByName").onclick = () => {
+        const sorted = actions.sort((a, b) => {
+          const nameA = a.module.name.toLowerCase();
+          const nameB = b.module.name.toLowerCase();
+          if (nameA < nameB) {
+            return -1;
+          }
+          if (nameA > nameB) {
+            return 1;
+          }
+          return 0;
+        });
+        document.getElementById("actionList").innerHTML = whiteBlock(sorted.map((a, i) => (`${i + 1}. ${displayFile(a, a.module.displayName ? `${a.module.name} ${font("white", "(" + a.module.displayName + ")")}` : a.module.name)} ${a.filename}`)).join('\n'));
+        displayNamesAll = false;
+        document.getElementById("listByDisplayName").innerHTML = "List with Display Name";
+      };
+
+      let displayNamesAll = false;
+      document.getElementById("listByDisplayName").onclick = () => {
+        if (displayNamesAll) {
+          const sorted = actions.sort((a, b) => {
+            const nameA = a.module.displayName?.toLowerCase() || a.module.name;
+            const nameB = b.module.displayName?.toLowerCase() || b.module.name;
+            if (nameA < nameB) {
+              return -1;
+            }
+            if (nameA > nameB) {
+              return 1;
+            }
+            return 0;
+          });
+          document.getElementById("actionList").innerHTML = whiteBlock(sorted.map((a, i) => (`${i + 1}. ${displayFile(a, a.module.displayName ? `${a.module.name} ${font("white", "(" + a.module.displayName + ")")}` : a.module.name)} ${a.filename}`)).join('\n'));
+          displayNamesAll = false;
+          document.getElementById("listByDisplayName").innerHTML = "List with Display Name";
+        } else {
+          document.getElementById("actionList").innerHTML = whiteBlock(actions.filter(a => a.module.displayName).map((a, i) => (`${i + 1}. ${displayFile(a, a.module.displayName ? `${a.module.name} ${font("white", "(" + a.module.displayName + ")")}` : a.module.name)} ${a.filename}`)).join('\n'));
+          displayNamesAll = true;
+          document.getElementById("listByDisplayName").innerHTML = "List all by Display Name";
+        }
+      };
+
+      document.getElementById("listHide").onclick = () => {
+        document.getElementById("actionList").innerHTML = "";
+        displayNamesAll = false;
+        document.getElementById("listByDisplayName").innerHTML = "List with Display Name";
+      };
+
     }
 
     displaySummary();
@@ -226,7 +302,7 @@ module.exports = {
           }
         }
         if (replacedBy && replacedBy.filepath !== actionPath) {
-          info += `\n${font("red", "This action is not used!")}\n${font("orange", `Action is replaced`)} by ${displayFile(replacedBy.filename, `${replacedBy.module.name}${replacedBy.module.displayName ? ' (' + replacedBy.module.displayName + ')' : ""}`, `Display ${replacedBy.filename}`)} located at\n${replacedBy.filepath}`;
+          info += `\n${font("red", "This action is not used!")}\n${font("orange", `Action is replaced`)} by ${displayFile(replacedBy, `${replacedBy.module.name}${replacedBy.module.displayName ? ' (' + replacedBy.module.displayName + ')' : ""}`)} located at\n${replacedBy.filepath}`;
         }
 
         document.getElementById("info").innerHTML = whiteBlock(info);
